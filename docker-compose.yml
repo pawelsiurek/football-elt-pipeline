@@ -1,0 +1,46 @@
+version: '3.8'
+
+services:
+  # PostgreSQL - data warehouse
+  postgres:
+    image: postgres:15
+    container_name: football_postgres
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
+    ports:
+      - "${DB_PORT}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data  
+      - ./sql:/docker-entrypoint-initdb.d        
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "${DB_USER}"]
+      interval: 5s
+      retries: 5
+
+  # Airflow — pipeline orchestrator
+  airflow:
+    build: .
+    container_name: football_airflow
+    depends_on:
+      postgres:
+        condition: service_healthy       
+    environment:
+      AIRFLOW__CORE__EXECUTOR: LocalExecutor
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://${DB_USER}:${DB_PASSWORD}@postgres:5432/${DB_NAME}
+      AIRFLOW__CORE__LOAD_EXAMPLES: 'false'  
+      AIRFLOW_UID: ${AIRFLOW_UID}
+      API_KEY: ${API_KEY}
+      COMPETITION_CODE: ${COMPETITION_CODE}
+    volumes:
+      - ./dags:/opt/airflow/dags        
+      - ./elt:/opt/airflow/elt         
+      - ./logs:/opt/airflow/logs
+    ports:
+      - "8080:8080"                      
+    command: standalone                 
+    user: "${AIRFLOW_UID}:0"
+
+volumes:
+  postgres_data:                         
