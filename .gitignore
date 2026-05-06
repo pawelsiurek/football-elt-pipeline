@@ -35,3 +35,5 @@ Thumbs.db
 # Docker
 *.log
 
+# Misc
+project-tree.png
