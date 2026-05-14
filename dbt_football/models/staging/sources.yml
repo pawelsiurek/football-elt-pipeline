@@ -1,0 +1,9 @@
+version: 2
+
+sources:
+  - name: raw_football
+    schema: public
+    tables:
+      - name: raw_matches
+      - name: raw_scorers
+      - name: raw_standings
