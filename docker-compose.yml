@@ -19,6 +19,23 @@ services:
       interval: 5s
       retries: 5
 
+  # PostgreSQL — Airflow metadata database (separate!)
+  postgres_airflow:
+    image: postgres:15
+    container_name: airflow_postgres
+    environment:
+      POSTGRES_USER: airflow
+      POSTGRES_PASSWORD: airflow
+      POSTGRES_DB: airflow
+    ports:
+      - "5434:5432"
+    volumes:
+      - airflow_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "airflow"]
+      interval: 5s
+      retries: 5
+
   # Airflow — pipeline orchestrator
   airflow:
     build: .
