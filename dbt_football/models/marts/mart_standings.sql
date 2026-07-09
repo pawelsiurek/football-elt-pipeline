@@ -1,5 +1,13 @@
 with standings as (
     select * from {{ ref('stg_standings') }}
+    -- raw_standings keeps full season history; the current table is the latest
+    -- season that has actually kicked off (played > 0), so a fixture-only
+    -- pre-season doesn't blank out the mart.
+    where season = (
+        select max(season)
+        from {{ ref('stg_standings') }}
+        where played > 0
+    )
 )
 
 select

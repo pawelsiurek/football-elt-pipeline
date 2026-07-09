@@ -1,5 +1,14 @@
 with matches as (
+    -- Form is computed from results, so only FINISHED matches count (scheduled
+    -- matches have NULL scores and would otherwise be miscounted as losses).
+    -- Scope to the latest season that has finished matches.
     select * from {{ ref('stg_matches') }}
+    where status = 'FINISHED'
+      and season = (
+          select max(season)
+          from {{ ref('stg_matches') }}
+          where status = 'FINISHED'
+      )
 ),
 
 -- unpivot: each match appears twice, once for home team once for away team

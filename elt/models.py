@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, DateTime, create_engine
+from sqlalchemy import Column, Integer, String, DateTime, UniqueConstraint, create_engine
 from sqlalchemy.orm import declarative_base
 from config import DB_URL
 
@@ -22,11 +22,19 @@ class RawMatch(Base):
 
 class RawStanding(Base):
     __tablename__ = "raw_standings"
-    
+
+    # A standings row is one team's line in one season's table, so the natural
+    # grain is (competition, season, team) — NOT team alone. Keying on team
+    # alone froze each team at its first-seen season and blocked later seasons.
+    __table_args__ = (
+        UniqueConstraint("competition", "season", "team",
+                         name="uq_standings_comp_season_team"),
+    )
+
     id              = Column(Integer, primary_key=True)
     competition     = Column(String)
     season          = Column(String)
-    team            = Column(String, unique=True, nullable=False)
+    team            = Column(String, nullable=False)
     position        = Column(Integer)
     played          = Column(Integer)
     won             = Column(Integer)
@@ -40,7 +48,14 @@ class RawStanding(Base):
 
 class RawScorer(Base):
     __tablename__ = "raw_scorers"
-    
+
+    # One row per player per season; without this the loader appended a fresh
+    # copy of every scorer on each run.
+    __table_args__ = (
+        UniqueConstraint("competition", "season", "player_name",
+                         name="uq_scorers_comp_season_player"),
+    )
+
     id          = Column(Integer, primary_key=True)
     competition = Column(String)
     season      = Column(String)
