@@ -1,0 +1,63 @@
+version: 2
+
+models:
+  - name: stg_matches
+    description: >
+      One row per match in the competition. Scores are NULL until a match is
+      played, so any score-based assertion is conditioned on status = 'FINISHED'
+      (see tests/assert_finished_matches_have_scores.sql).
+    columns:
+      - name: match_id
+        description: Natural key from football-data.org — one id per fixture.
+        tests:
+          - unique
+          - not_null
+      - name: status
+        description: Fixture lifecycle status as reported by the source API.
+        tests:
+          # Validates the API contract: an unexpected status signals a schema
+          # change upstream. Current data only has SCHEDULED/FINISHED, but the
+          # full v4 enum is allowed so legitimate states don't false-alarm.
+          - accepted_values:
+              values:
+                - SCHEDULED
+                - TIMED
+                - IN_PLAY
+                - PAUSED
+                - FINISHED
+                - SUSPENDED
+                - POSTPONED
+                - CANCELLED
+                - AWARDED
+      - name: home_team
+        tests:
+          - not_null
+      - name: away_team
+        tests:
+          - not_null
+
+  - name: stg_standings
+    description: >
+      League-table snapshot at the grain of (competition, season, team). The
+      loader upserts on that key, so each team has exactly one current row per
+      season while full season history is retained. Composite uniqueness is
+      checked in tests/assert_one_standings_row_per_team_per_season.sql.
+    columns:
+      - name: team
+        description: Team name — unique only within a (competition, season).
+        tests:
+          - not_null
+      - name: position
+        tests:
+          - not_null
+
+  - name: stg_scorers
+    description: Top scorers for the competition, one row per player.
+    columns:
+      - name: player_name
+        tests:
+          - not_null
+      - name: goals
+        description: Total goals scored (penalties are a subset of this).
+        tests:
+          - not_null

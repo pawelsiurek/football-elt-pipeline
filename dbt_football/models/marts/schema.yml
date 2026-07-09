@@ -1,0 +1,24 @@
+version: 2
+
+models:
+  - name: mart_standings
+    description: >
+      Analytics-ready league table with derived rate metrics. Rows are ranked
+      with rank(), so league_position can tie across teams (i.e. it is NOT
+      unique) — `team` is the grain of the model.
+    columns:
+      - name: team
+        tests:
+          - unique
+          - not_null
+      - name: league_position
+        tests:
+          - not_null
+
+  - name: mart_team_form
+    description: One row per team with full-season totals plus last-5-match form.
+    columns:
+      - name: team
+        tests:
+          - unique
+          - not_null
