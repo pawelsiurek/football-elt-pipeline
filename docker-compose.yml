@@ -52,9 +52,17 @@ services:
       AIRFLOW_UID: ${AIRFLOW_UID}
       API_KEY: ${API_KEY}
       COMPETITION_CODE: ${COMPETITION_CODE}
+      # Football data DB — reached over the docker network, so use the
+      # service name and the INTERNAL port (5432), not the host-mapped ${DB_PORT}.
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: ${DB_NAME}
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
     volumes:
-      - ./dags:/opt/airflow/dags        
-      - ./elt:/opt/airflow/elt         
+      - ./dags:/opt/airflow/dags
+      - ./elt:/opt/airflow/elt
+      - ./dbt_football:/opt/airflow/dbt_football
       - ./logs:/opt/airflow/logs
     ports:
       - "8080:8080"                      
