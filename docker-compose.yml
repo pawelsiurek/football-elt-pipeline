@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   # PostgreSQL - data warehouse
   postgres:
@@ -12,8 +10,7 @@ services:
     ports:
       - "${DB_PORT}:5432"
     volumes:
-      - postgres_data:/var/lib/postgresql/data  
-      - ./sql:/docker-entrypoint-initdb.d        
+      - postgres_data:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD", "pg_isready", "-U", "${DB_USER}"]
       interval: 5s

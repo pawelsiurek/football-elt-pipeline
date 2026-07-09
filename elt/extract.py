@@ -58,7 +58,12 @@ def extract_scorers(competition_code: str) -> dict:
     return data
 
 if __name__ == "__main__":
+    # Quick smoke test of the three endpoints.
     matches = extract_matches(COMPETITION_CODE)
     standings = extract_standings(COMPETITION_CODE)
     scorers = extract_scorers(COMPETITION_CODE)
-    print(matches)
+    logger.info(
+        f"OK — {len(matches['matches'])} matches, "
+        f"{len(standings['standings'][0]['table'])} standings rows, "
+        f"{len(scorers['scorers'])} scorers"
+    )

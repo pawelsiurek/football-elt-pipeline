@@ -16,6 +16,7 @@ env/
 dbt_football/target/
 dbt_football/dbt_packages/
 dbt_football/logs/
+dbt_football/.user.yml
 
 # Airflow
 logs/
@@ -34,6 +35,3 @@ Thumbs.db
 
 # Docker
 *.log
-
-# Misc
-project-tree.png
