@@ -1,4 +1,4 @@
-.PHONY: help install-dev lint format format-check test dbt-parse ci precommit \
+.PHONY: help install-dev lint format format-check lint-check test dbt-parse ci precommit \
         seed dbt-build test-integration integration
 
 help:  ## Show this help
@@ -15,7 +15,11 @@ lint:  ## Ruff lint (with autofix)
 format:  ## Ruff format (rewrites files)
 	ruff format .
 
-format-check:  ## Ruff format check (no writes) — this is what CI runs
+format-check:  ## Ruff format check (no writes)
+	ruff format --check .
+
+lint-check:  ## Non-mutating lint + format check (CI's quality job)
+	ruff check .
 	ruff format --check .
 
 test:  ## Run the fast unit tests (no database)
@@ -25,11 +29,7 @@ dbt-parse:  ## Validate dbt models/refs compile (renders profile, no DB connecti
 	cd dbt_football && DB_USER=dummy DB_PASSWORD=dummy DB_NAME=dummy \
 		dbt parse --profiles-dir .
 
-ci:  ## Everything CI's quality+test jobs run, locally
-	ruff check .
-	ruff format --check .
-	pytest -m "not integration"
-	$(MAKE) dbt-parse
+ci: lint-check test dbt-parse  ## Run the full quality + unit gate locally
 
 # ── Integration flow (needs a THROWAWAY Postgres via DB_* + TEST_DATABASE_URL) ──
 seed:  ## Load fixture data into raw_* (uses DB_* env)

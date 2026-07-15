@@ -1,0 +1,6 @@
+# Normalise line endings so files consumed by the Linux CI runner never get
+# CRLF from a Windows checkout (which would break Make recipes and shell steps).
+* text=auto eol=lf
+
+*.png binary
+*.jpg binary

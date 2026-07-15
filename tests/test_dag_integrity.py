@@ -53,14 +53,14 @@ def test_expected_dag_is_present():
 
 
 def test_dag_has_expected_tasks():
-    dag = _dagbag().get_dag(DAG_ID)
+    dag = _dagbag().dags[DAG_ID]
     assert dag is not None
     assert set(dag.task_ids) == EXPECTED_TASKS
 
 
 def test_dag_task_wiring():
     """db_init fans out to the three syncs, which converge on dbt_run -> dbt_test."""
-    dag = _dagbag().get_dag(DAG_ID)
+    dag = _dagbag().dags[DAG_ID]
 
     db_init = dag.get_task("db_initialization")
     assert {t.task_id for t in db_init.downstream_list} == {
