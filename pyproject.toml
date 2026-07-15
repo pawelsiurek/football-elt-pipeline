@@ -22,3 +22,10 @@ select = ["E", "F", "I", "B", "UP"]
 [tool.ruff.format]
 # Ruff's defaults (Black-compatible) are fine; listed here so intent is explicit.
 quote-style = "double"
+
+[tool.pytest.ini_options]
+# The elt/ modules use flat imports (`from config import ...`), so they expect
+# elt/ on sys.path — mirror what the Airflow DAG does with sys.path.insert.
+pythonpath = ["elt"]
+testpaths = ["tests"]
+addopts = "-ra"

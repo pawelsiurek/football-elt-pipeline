@@ -3,3 +3,4 @@
 
 ruff==0.15.21          # lint + format (replaces black + flake8 + isort)
 pre-commit==4.6.0      # runs the hooks below before each commit
+pytest==9.1.1          # unit tests for elt/ (API mocked, in-memory SQLite)
