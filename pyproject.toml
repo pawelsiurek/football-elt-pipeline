@@ -28,4 +28,7 @@ quote-style = "double"
 # elt/ on sys.path — mirror what the Airflow DAG does with sys.path.insert.
 pythonpath = ["elt"]
 testpaths = ["tests"]
-addopts = "-ra"
+addopts = "-ra --strict-markers"
+markers = [
+    "integration: needs a real Postgres (set TEST_DATABASE_URL). Skipped otherwise.",
+]
