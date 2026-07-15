@@ -19,3 +19,8 @@ loguru==0.7.2
 # dbt
 dbt-core==1.7.0
 dbt-postgres==1.7.0
+# dbt 1.7 calls MessageToJson(including_default_value_fields=...) in its end-of-run
+# logging; protobuf 5+ removed that argument, which crashes `dbt build` on a fresh
+# install (CI). Airflow's constraints already cap protobuf, so this is only needed
+# where dbt runs without Airflow (the dbt-integration job). Pin below 5.
+protobuf>=4.0.0,<5
