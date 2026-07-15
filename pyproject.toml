@@ -1,0 +1,34 @@
+[tool.ruff]
+# Match the Python that runs in the Airflow image (apache/airflow:2.9.1 -> 3.11).
+target-version = "py311"
+line-length = 100
+
+# Never lint/format vendored or generated code.
+extend-exclude = [
+    ".venv",
+    "dbt_football/target",
+    "dbt_football/dbt_packages",
+    "logs",
+]
+
+[tool.ruff.lint]
+# A deliberately moderate starter set:
+#   E, F  - pyflakes + pycodestyle (real errors, undefined names, unused imports)
+#   I     - import sorting (isort)
+#   B     - flake8-bugbear (likely bugs / bad practices)
+#   UP    - pyupgrade (modernize syntax for our target-version)
+select = ["E", "F", "I", "B", "UP"]
+
+[tool.ruff.format]
+# Ruff's defaults (Black-compatible) are fine; listed here so intent is explicit.
+quote-style = "double"
+
+[tool.pytest.ini_options]
+# The elt/ modules use flat imports (`from config import ...`), so they expect
+# elt/ on sys.path — mirror what the Airflow DAG does with sys.path.insert.
+pythonpath = ["elt"]
+testpaths = ["tests"]
+addopts = "-ra --strict-markers"
+markers = [
+    "integration: needs a real Postgres (set TEST_DATABASE_URL). Skipped otherwise.",
+]

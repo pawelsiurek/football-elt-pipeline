@@ -1,0 +1,100 @@
+name: CI
+
+# Runs on every PR, on pushes to main (post-merge), and on manual dispatch.
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# A newer commit on the same ref cancels an in-flight run for that ref.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  PYTHON_VERSION: "3.11" # matches apache/airflow:2.9.1 base image
+  AIRFLOW_VERSION: "2.9.1"
+
+jobs:
+  # ── Lint + format (fast, dev tooling only) ──────────────────────────────────
+  quality:
+    name: Lint & format (ruff)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+          cache-dependency-path: requirements-dev.txt
+      - run: pip install -r requirements-dev.txt
+      - run: make lint-check
+
+  # ── Unit + DAG tests + dbt parse (needs Airflow + dbt; they coexist fine) ────
+  test:
+    name: Unit + DAG tests, dbt parse
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+          cache-dependency-path: |
+            requirements.txt
+            requirements-dev.txt
+      - name: Install Airflow (constrained) + project deps
+        run: |
+          pip install "apache-airflow==${AIRFLOW_VERSION}" \
+            --constraint "https://raw.githubusercontent.com/apache/airflow/constraints-${AIRFLOW_VERSION}/constraints-${PYTHON_VERSION}.txt"
+          pip install -r requirements.txt -r requirements-dev.txt
+      - name: Unit + DAG tests
+        env:
+          AIRFLOW__CORE__LOAD_EXAMPLES: "False"
+          AIRFLOW_HOME: /tmp/airflow
+        run: make test
+      - name: dbt parse (models/refs compile, no DB)
+        run: make dbt-parse
+
+  # ── Real Postgres: dbt build + data-quality tests + loader upserts ──────────
+  dbt-integration:
+    name: dbt build + upsert tests (Postgres)
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: ci
+          POSTGRES_PASSWORD: ci
+          POSTGRES_DB: football_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U ci -d football_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DB_HOST: localhost
+      DB_PORT: "5432"
+      DB_USER: ci
+      DB_PASSWORD: ci
+      DB_NAME: football_test
+      TEST_DATABASE_URL: postgresql+psycopg2://ci:ci@localhost:5432/football_test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+          cache-dependency-path: |
+            requirements.txt
+            requirements-dev.txt
+      - run: pip install -r requirements.txt -r requirements-dev.txt
+      - name: Seed fixtures into raw_* tables
+        run: make seed
+      - name: dbt build (materialise models + run every dbt test)
+        run: make dbt-build
+      - name: Loader upsert tests (real Postgres)
+        run: make test-integration

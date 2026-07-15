@@ -1,5 +1,8 @@
 # Football ELT Pipeline
 
+[![CI](https://github.com/pawelsiurek/football-elt-pipeline/actions/workflows/ci.yml/badge.svg)](https://github.com/pawelsiurek/football-elt-pipeline/actions/workflows/ci.yml)
+[![Publish image](https://github.com/pawelsiurek/football-elt-pipeline/actions/workflows/docker.yml/badge.svg)](https://github.com/pawelsiurek/football-elt-pipeline/actions/workflows/docker.yml)
+
 A daily, containerized **ELT pipeline** that ingests football competition data (matches, standings, and top scorers) from the [football-data.org](https://www.football-data.org/) API, lands it in **PostgreSQL**, and transforms it into analytics-ready models with **dbt**. **Apache Airflow** orchestrates the whole flow on a daily schedule, and a suite of **23 dbt tests** enforces data-quality guarantees on every run.
 
 Built to practice the core building blocks of a modern data platform end to end: reliable ingestion, an idempotent load layer, layered SQL modeling, orchestration, and automated data-quality testing.
@@ -122,6 +125,28 @@ To run the dbt models or tests on their own:
 
 ```bash
 docker exec -it football_airflow bash -lc 'cd /opt/airflow/dbt_football && dbt build --profiles-dir .'
+```
+
+---
+
+## Continuous integration & delivery
+
+Every push and pull request runs a [GitHub Actions pipeline](.github/workflows/ci.yml) with three parallel jobs — and it needs **zero configured secrets** (the API is mocked, Postgres is ephemeral, and image publishing uses the built-in token):
+
+| Job | What it checks |
+| --- | --- |
+| **quality** | `ruff` lint + format |
+| **test** | `pytest` unit tests for `elt/` (API mocked, in-memory SQLite), an Airflow **DagBag import test**, and `dbt parse` |
+| **dbt-integration** | spins up a real **PostgreSQL** service, seeds fixtures into the `raw_*` tables, then runs `dbt build` + all **23 data-quality tests** and the loaders' Postgres upserts for real |
+
+On merge to `main`, a second workflow ([`docker.yml`](.github/workflows/docker.yml)) builds the Airflow image and publishes it to the **GitHub Container Registry** at `ghcr.io/pawelsiurek/football-elt-pipeline`.
+
+Local development mirrors CI via [`pre-commit`](.pre-commit-config.yaml) hooks and a `Makefile`:
+
+```bash
+make install-dev   # install tooling + register the pre-commit hook
+make ci            # lint + unit tests + dbt parse, exactly as CI runs them
+make integration   # seed -> dbt build -> upsert tests (needs a throwaway Postgres)
 ```
 
 ---
