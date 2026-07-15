@@ -12,6 +12,11 @@ build/
 venv/
 env/
 
+# Test / lint tool caches
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+
 # dbt
 dbt_football/target/
 dbt_football/dbt_packages/
