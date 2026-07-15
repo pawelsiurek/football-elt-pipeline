@@ -28,4 +28,3 @@ select
 
 from standings
 order by league_position
-

@@ -1,0 +1,5 @@
+# Development & CI tooling only — NOT installed into the Airflow runtime image.
+# Install with:  pip install -r requirements-dev.txt
+
+ruff==0.15.21          # lint + format (replaces black + flake8 + isort)
+pre-commit==4.6.0      # runs the hooks below before each commit

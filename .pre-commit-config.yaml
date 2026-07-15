@@ -1,0 +1,22 @@
+# Runs automatically on `git commit` (after `pre-commit install`).
+# Same Ruff version/config as CI, so if pre-commit passes, CI's quality job passes.
+# Run manually across the whole repo with:  pre-commit run --all-files
+repos:
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.15.21
+    hooks:
+      # Lint and auto-fix (import sorting, etc). If it fixes something the commit
+      # aborts so you can review + re-stage — that's expected, just commit again.
+      - id: ruff-check
+        args: [--fix]
+      # Format (Black-compatible).
+      - id: ruff-format
+
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: trailing-whitespace       # strip trailing spaces (all file types)
+      - id: end-of-file-fixer         # ensure every file ends in exactly one newline
+      - id: check-yaml                # catch malformed YAML (dbt, compose, workflows)
+      - id: check-merge-conflict      # block committing unresolved <<<<<<< markers
+      - id: check-added-large-files   # guard against accidentally committing big files

@@ -1,20 +1,22 @@
-from sqlalchemy.orm import Session
-from sqlalchemy import create_engine
-from sqlalchemy.exc import IntegrityError
-from sqlalchemy.dialects.postgresql import insert as pg_insert
 from datetime import datetime
+
+from config import COMPETITION_CODE, DB_URL
+from extract import extract_matches, extract_scorers, extract_standings
 from loguru import logger
-from models import RawMatch, RawStanding, RawScorer, create_tables
-from config import DB_URL, COMPETITION_CODE
-from extract import extract_matches, extract_standings, extract_scorers
+from models import RawMatch, RawScorer, RawStanding, create_tables
+from sqlalchemy import create_engine
+from sqlalchemy.dialects.postgresql import insert as pg_insert
+from sqlalchemy.exc import IntegrityError
+from sqlalchemy.orm import Session
+
 
 def load_matches(data: dict, session: Session) -> None:
     """Load raw matches into raw_matches table"""
-    
+
     matches = data["matches"]
     inserted = 0
     skipped = 0
-    
+
     for match in matches:
         row = RawMatch(
             match_id=match["id"],
@@ -27,9 +29,9 @@ def load_matches(data: dict, session: Session) -> None:
             home_score=match["score"]["fullTime"]["home"],
             away_score=match["score"]["fullTime"]["away"],
             match_date=datetime.fromisoformat(match["utcDate"].replace("Z", "+00:00")),
-            inserted_at=datetime.utcnow()
+            inserted_at=datetime.utcnow(),
         )
-        
+
         try:
             session.add(row)
             session.commit()
@@ -37,7 +39,7 @@ def load_matches(data: dict, session: Session) -> None:
         except IntegrityError:
             session.rollback()
             skipped += 1
-    
+
     logger.info(f"Matches - inserted: {inserted}, skipped (duplicates): {skipped}")
 
 
@@ -79,8 +81,16 @@ def load_standings(data: dict, session: Session) -> None:
 
     stmt = pg_insert(RawStanding).values(rows)
     mutable = [
-        "position", "played", "won", "drawn", "lost",
-        "goals_for", "goals_against", "goal_difference", "points", "inserted_at",
+        "position",
+        "played",
+        "won",
+        "drawn",
+        "lost",
+        "goals_for",
+        "goals_against",
+        "goal_difference",
+        "points",
+        "inserted_at",
     ]
     stmt = stmt.on_conflict_do_update(
         index_elements=["competition", "season", "team"],
@@ -132,23 +142,22 @@ def load_scorers(data: dict, session: Session) -> None:
     session.commit()
 
     logger.info(f"Scorers — upserted {len(rows)} rows (season {season})")
-    
+
+
 if __name__ == "__main__":
     engine = create_engine(DB_URL)
     create_tables(engine)
-    
+
     with Session(engine) as session:
         logger.info("Starting load...")
-        
+
         matches_data = extract_matches(COMPETITION_CODE)
         load_matches(matches_data, session=session)
-        
+
         standings_data = extract_standings(COMPETITION_CODE)
         load_standings(standings_data, session=session)
-        
+
         scorers_data = extract_scorers(COMPETITION_CODE)
         load_scorers(scorers_data, session)
 
         logger.info("Load complete!")
-        
-        

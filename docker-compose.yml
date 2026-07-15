@@ -39,13 +39,13 @@ services:
     container_name: football_airflow
     depends_on:
       postgres:
-        condition: service_healthy       
-      postgres_airflow: 
-        condition: service_healthy 
+        condition: service_healthy
+      postgres_airflow:
+        condition: service_healthy
     environment:
       AIRFLOW__CORE__EXECUTOR: LocalExecutor
       AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres_airflow:5432/airflow
-      AIRFLOW__CORE__LOAD_EXAMPLES: 'false'  
+      AIRFLOW__CORE__LOAD_EXAMPLES: 'false'
       AIRFLOW_UID: ${AIRFLOW_UID}
       API_KEY: ${API_KEY}
       COMPETITION_CODE: ${COMPETITION_CODE}
@@ -62,10 +62,10 @@ services:
       - ./dbt_football:/opt/airflow/dbt_football
       - ./logs:/opt/airflow/logs
     ports:
-      - "8080:8080"                      
-    command: standalone                 
+      - "8080:8080"
+    command: standalone
     user: "${AIRFLOW_UID}:0"
 
 volumes:
-  postgres_data:            
-  airflow_postgres_data:             
+  postgres_data:
+  airflow_postgres_data:
